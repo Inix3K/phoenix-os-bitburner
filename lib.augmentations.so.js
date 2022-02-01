@@ -4,6 +4,7 @@
 import { PriorityQueue } from "./lib.structures.so";
 import { faction_blockers } from "./var.constants";
 import { loop_time } from "./var.constants";
+import { handleDB } from "./lib.database.so";
 
 class Augmentation {
 
@@ -34,22 +35,12 @@ class Augmentation {
         return this.ns.getAugmentationStats(this.name);
     }
 
-    stat(stat_name) {
-        if (this.has_stat(stat_name)) {
-            return this.stats[stat_name];
-        }
-    }
-
-    get owned() {
+   get owned() {
         return this.ns.getOwnedAugmentations(true).includes(this.name);
     }
 
     get installed() {
         return this.ns.getOwnedAugmentations(false).includes(this.name);
-    }
-
-    has_stat(stat_name) {
-        return this.stats.hasOwnProperty(stat_name);
     }
 
     get factions_offering() {
@@ -62,46 +53,102 @@ class Augmentation {
         return offering_factions;
     }
 
-    purchase(faction_name) {
-        return this.ns.purchaseAugmentation(faction_name, this.name);
+}
+
+export class AugmentationSnapshot {
+    constructor(Augmentation) {
+        for (let prop of [
+            "price",
+            "prereq",
+            "rep",
+            "stats",
+            "owned",
+            "installed",
+            "factions_offering",
+        ]) {
+            this[prop] = Augmentation[prop];
+        }
     }
 }
 
-var augmentation_cache=[];
-
+export const augFactory = async (aug_name) => {
+    let aug = new Augmentation(aug_name);
+    await snapshotAug(aug);
+    return aug;
+};
 
 /**
- * Defines the standard object representing an augmentation.
+ * Takes a snapshot of an aug for the database.
+ * @param {Augmentation} aug_obj 
+ * @returns 
+ */
+export const snapshotAug = async (aug_obj) => {
+    const db = await handleDB();
+    const snap = new AugmentationSnapshot(aug_obj);
+    await db.put("augmentations", snap);
+    return snap;
+};
+
+/**
+ * Gets cached information about an aug from the database
+ *
+ * @export
+ * @param {string} aug_name
+ * @return {Promise<AugmentationSnapshot>} 
+ */
+export async function aug_info(aug_name) {
+    const db = await handleDB();
+    return await db.get("augmentations", aug_name);
+}
+/**
+ * Defines the standard object representing a list of augmentations.
  * Other functions should load information about augmentations from this library.
  *
  * @export
  * @param {ns} ns
  * @param {import("./phoenix-doc").PlayerObject} player
  */
-export function augmentations() {
-    if (!augmentation_cache.length) {
-    	for (const [faction, blockers] of faction_blockers) {
-            for (let aug of globalThis.ns.getAugmentationsFromFaction(faction)) {
-                augmentation_cache.push(new Augmentation(aug));
+export async function list_augs() {
+    let aug_list = [];
+    for (const [faction, blockers] of faction_blockers) {
+        for (let aug_name of globalThis.ns.getAugmentationsFromFaction(faction)) {
+            var aug_snapshot;
+            try { 
+                aug_snapshot = await aug_info(aug_name);
+                if (!aug_snapshot) {
+                    aug_snapshot = await snapshotAug(aug_name);
                 }
+            } catch (e) {
+                aug_snapshot = await snapshotAug(aug_name);
+            } finally {
+                aug_list.push(aug_snapshot);
             }
+        }
+        return aug_list;
     }
-    return augmentation_cache;
 }
 
+export const owned_aug_count = async () => await list_augs.filter(aug => aug.owned.length);
+
 /**
- * 
- * Gets a list of augmentations that match a stat
- * 
- * 
- * @param {PlayerObject} player 
- * @param {string} priority_stat - the name of a stat, e.g. hacking_mult
- * @returns {Augmentation[]} desired augs by name
- * 
+ * gets a list of augmentations that match a stat
+ *
+ * @export
+ * @param {string} stat
+ * @return {AugmentationSnapshot[]} 
  */
-export function desired_augmentations(priority_stat="hacking_mult") {
-    return augmentations().filter(aug => aug.has_stat(priority_stat) && !aug.owned);
+export async function augs_by_stat(stats=["hacking_mult"]) {
+    let aug_list = await list_augs();
+    for (let wanted_stat of stats) {
+        let wanted_augs = aug_list.filter(aug => aug.stats.keys().includes[wanted_stat]);
+        if (wanted_augs.length > 0) {
+            return wanted_augs;
+        }
+    }
+    return [];
+    
 }
+
 
 /**
  * Creates a priority queue for augmentations.
@@ -109,23 +156,31 @@ export function desired_augmentations(priority_stat="hacking_mult") {
  * @param {ns} ns 
  * @param {import("./phoenix-doc").PlayerObject} player 
  */
-export const prioritize_augmentations = (ns, player) => {
+export const prioritize_augmentations = (ns, player, stat_priorities=["hacking_mult", "faction_rep_mult"]) => {
     const pq = new PriorityQueue();
-    for (let aug of augmentations()) {
+    for (let aug of list_augs()) {
         if (aug.name == "NeuroFlux Governor") {
             continue;
         }
 
-        // now we have to reduce the value of an augmentation to a 0-20 number...
+
+        // now we have to reduce the value of an augmentation to a more reasonable scale of numbers...
         // that determines in which order we want to pursue the augmentation...
         // probably should do it logarithmically...
         // probably add in faction favor and current cash per second as modifiers to these numbers
-        let priority = (Math.log(aug.price) / Math.log(10)) + (Math.log(aug.rep) / Math.log(4));
-        priority = Math.min(Math.ceil(priority), 20);
+        let modifier = 4;
+        // the following function reduces our modifier based on the order of stat_priorities.
+        // if we have five stat priorities, the first will be prioritized over the second at a rate of 5/4
+        // however, since this is a modifier for a logarithmic function, it gives a moderate, but not exclusive, advantage.
+        // in a list with only two stat priorities, the default, the advantage for first listed is about 50%
+        stat_priorities.forEach((stat, idx, arr) => modifier /= (aug.stats.keys().includes(stat) ? arr.length-idx : 0));
+        let priority = (Math.log(aug.price) / Math.log(10)) + (Math.log(aug.rep) / Math.log(modifier));
 
         // this feels like a good formula, since we can do some math on the pq. for instance,
         // it would make sense to consider [all] a factions' augmentations at the priority
         // value of its [most expensive] aug, since getting there will get you all the lower ranked augs
+
+
         pq.add(aug, priority);
     }
     
