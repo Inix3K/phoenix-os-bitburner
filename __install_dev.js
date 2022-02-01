@@ -37,7 +37,7 @@ export async function main(ns) {
     await ns.wget("https://raw.githubusercontent.com/trhr/phoenix-os-bitburner/dev/lib.structures.so.js","lib.structures.so.js");
     await ns.wget("https://raw.githubusercontent.com/trhr/phoenix-os-bitburner/dev/lib.utils.so.js","lib.utils.so.js");
     await ns.wget("https://raw.githubusercontent.com/trhr/phoenix-os-bitburner/dev/logic.corps.js","logic.corps.js");
-    await ns.wget("https://raw.githubusercontent.com/trhr/phoenix-os-bitburner/dev/logic.crimes.js","logic.crimes.js");
+    await ns.wget("https://raw.githubusercontent.com/trhr/phoenix-os-bitburner/dev/logic.crime.js","logic.crime.js");
     await ns.wget("https://raw.githubusercontent.com/trhr/phoenix-os-bitburner/dev/logic.factions.js","logic.factions.js");
     await ns.wget("https://raw.githubusercontent.com/trhr/phoenix-os-bitburner/dev/logic.hack.js","logic.hack.js");
     await ns.wget("https://raw.githubusercontent.com/trhr/phoenix-os-bitburner/dev/logic.leetcode.js","logic.leetcode.js");
