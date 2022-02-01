@@ -245,7 +245,7 @@ export default function playerFactory() {
                         exp: data.hacking_exp_mult,
                         grow: data.hacking_grow_mult,
                         money: data.hacking_money_mult,
-                        level: data.hacking_level_mult,
+                        level: data.hacking_mult,
                         speed: data.hacking_speed_mult
                     }
                 };
@@ -256,8 +256,8 @@ export default function playerFactory() {
                 var data = globalThis.ns.getPlayer();
                 return {
                     multipliers: {
-                        coreCost: data.hacknet_node_core_mult,
-                        levelCost: data.hacknet_node_level_mult,
+                        coreCost: data.hacknet_node_core_cost_mult,
+                        levelCost: data.hacknet_node_level_cost_mult,
                         production: data.hacknet_node_money_mult,
                         purchaseCost: data.hacknet_node_purchase_cost_mult,
                         ramCost: data.hacknet_node_ram_cost_mult,
