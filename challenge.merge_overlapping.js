@@ -11,7 +11,7 @@ function arrayEquals(a, b) {
       a.every((val, index) => val === b[index]);
   }
 
-export async function attempt(params) {
+export function attempt(params) {
     let test = solve([[1,3],[2,6],[8,10],[15,18]]);
     let solution = [[1,6],[8,10],[15,18]];
     if (!arrayEquals(test, solution)) { throw "Test 1 failed to pass"; }
