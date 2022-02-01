@@ -17,44 +17,44 @@ import updateData, { firstLoad, snapshotServer, snapshotPlayer } from "./lib.loa
 
 /***************************************************************/
 /*                  SINGULARITY FUNCTIONS                      */
-import * as sing from "./lib.singularity.so";
+import * as sing from "./logic.singularity";
 /*                  SINGULARITY FAKES                          */
-// import * as sing from "./fake.singularity.so";
+// import * as sing from "./fake.singularity";
 /***************************************************************/
 
 /***************************************************************/
 /*                  FACTION FUNCTIONS                          */
-import * as facts from "./lib.factions.so";
+import * as facts from "./logic.factions";
 /*                  FACTION FAKES                              */
-// import * as facts from "./fake.factions.so";
+// import * as facts from "./fake.factions";
 /***************************************************************/
 
 /***************************************************************/
 /*                  CORPORATION FUNCTIONS                      */
-// import * as corps from "./lib.corps.so";
+// import * as corps from "./logic.corps";
 /*                  CORPORATION FAKES                          */
-import * as corps from "./fake.corps.so";
+import * as corps from "./fake.corps";
 /***************************************************************/
 
 /***************************************************************/
 /*                  CRIME FUNCTIONS                            */
-// import * as crimes from "./lib.crime.so";
+// import * as crimes from "./logic.crimes";
 /*                  CRIME FAKES                                */
-import * as crimes from "./fake.crime.so";
+import * as crimes from "./fake.crimes";
 /***************************************************************/
 
 /***************************************************************/
 /*                  CODING CONTRACT FUNCTIONS                  */
-// import * as challenges from "./lib.coding.so";
+import * as leetcode from "./logic.leetcode";
 /*                  CODING CONTRACT FAKES                      */
-import * as challenges from "./fake.coding.so";
+// import * as leetcode from "./fake.leetcode";
 /***************************************************************/
 
 /***************************************************************/
 /*                  SLEEVE FUNCTIONS                           */
-// import * as sleeves from "./lib.sleeve.so";
+// import * as sleeves from "./logic.sleeve";
 /*                  SLEEVE FAKES                               */
-import * as sleeves from "./fake.sleeve.so";
+import * as sleeves from "./fake.sleeve";
 /***************************************************************/
 
 /***************************************************************/
@@ -132,21 +132,21 @@ export async function main(ns){
                 ({ player, servers } = player.moneyStrategy.sighup(ns, player, servers));
                 player.moneyStrategy = moneyStrategy;
             }
-        }        
+        }
 
-        ({player, servers}     = await facts.init            (ns, player, servers));
-        ({player, servers}     = await corps.init            (ns, player, servers));
-        ({player, servers}     = await crimes.init           (ns, player, servers));
-        ({player, servers}     = await challenges.init       (ns, player, servers));
-        ({player, servers}     = await sleeves.init          (ns, player, servers));
-        ({player, servers}     = await sing.alpha            (ns, player, servers));
-        ({player, servers}     = await moneyStrategy.init     (ns, player, servers));
+        ({player, servers}     = await facts.init               (ns, player, servers));
+        ({player, servers}     = await corps.init               (ns, player, servers));
+        ({player, servers}     = await crimes.init              (ns, player, servers));
+        ({player, servers}           = leetcode.init            (ns, player, servers));
+        ({player, servers}     = await sleeves.init             (ns, player, servers));
+        ({player, servers}     = await sing.alpha               (ns, player, servers));
+        ({player, servers}     = await moneyStrategy.init       (ns, player, servers));
         ({player, servers}           = moneyStrategy.buy_things (ns, player, servers));
-        ({player, servers}     = await moneyStrategy.cleanup   (ns, player, servers));
+        ({player, servers}     = await moneyStrategy.cleanup    (ns, player, servers));
         ({player, servers}     = await hackStrategy.init        (ns, player, servers));
         ({player, servers}           = hackStrategy.do_hack     (ns, player, servers));
-        ({player, servers}     = await hackStrategy.cleanup   (ns, player, servers));
-        ({player, servers}     = await sing.omega            (ns, player, servers));
+        ({player, servers}     = await hackStrategy.cleanup     (ns, player, servers));
+        // ({player, servers}     = await sing.omega            (ns, player, servers));
          
         await motd.banner_short(ns, player, servers, hackStrategy, moneyStrategy, start_time);
         await ns.sleep(loop_time);

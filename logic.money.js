@@ -3,16 +3,16 @@
 import { LogicState } from "./lib.gamestates.so";
 import { queueFactory, mergeModifiers } from "./lib.utils.so";
 
-// import * as sing from "./fake.singularity.so";
-import * as sing from "./lib.singularity.so";
-// import * as facts from "./fake.singularity.so";
-import * as facts from "./lib.singularity.so";
-import * as corps from "./fake.singularity.so";
-// import * as corps from "./lib.singularity.so";
-import * as crimes from "./fake.singularity.so";
-// import * as crimes from "./lib.singularity.so";
-import * as sleeves from "./fake.singularity.so";
-// import * as sleeves from "./lib.singularity.so";
+// import * as sing from "./fake.singularity";
+import * as sing from "./logic.singularity";
+// import * as facts from "./fake.factions";
+import * as facts from "./logic.factions";
+import * as corps from "./fake.corps";
+// import * as corps from "./logic.corps";
+import * as crimes from "./fake.crimes";
+// import * as crimes from "./logic.crimes";
+import * as sleeves from "./fake.sleeve";
+// import * as sleeves from "./logic.sleeve";
 
 
 // HOW TO USE THE LOGIC ENGINE
@@ -163,11 +163,11 @@ export async function determineResourceAllocation(ns, servers, player) {
     const weights = BaseModifiers(ns, servers, player);
 
     const modifiers = [
-        await sing.msModifiers(ns, servers, player),
-        await facts.msModifiers(ns, servers, player),
-        await corps.msModifiers(ns, servers, player),
-        await crimes.msModifiers(ns, servers, player),
-        await sleeves.msModifiers(ns, servers, player)
+        await sing.moneyModifiers(ns, servers, player, weights),
+        await facts.moneyModifiers(ns, servers, player, weights),
+        await corps.moneyModifiers(ns, servers, player, weights),
+        await crimes.moneyModifiers(ns, servers, player, weights),
+        await sleeves.moneyModifiers(ns, servers, player, weights)
     ];
 
     const weighted_weights = mergeModifiers(weights, modifiers);
