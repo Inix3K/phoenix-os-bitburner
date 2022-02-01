@@ -67,7 +67,6 @@ export async function main(ns) {
     await ns.wget("https://raw.githubusercontent.com/trhr/phoenix-os-bitburner/dev/usr.sf4route.js","usr.sf4route.js");
     await ns.wget("https://raw.githubusercontent.com/trhr/phoenix-os-bitburner/dev/var.constants.js","var.constants.js");
     await ns.wget("https://raw.githubusercontent.com/trhr/phoenix-os-bitburner/dev/usr.aliases.txt","usr.aliases.txt");
-    await ns.wget("https://raw.githubusercontent.com/trhr/phoenix-os-bitburner/dev/var.debug.txt","var.debug.txt");
     
 
     ns.tprint("Phoenix OS kernel v1.0.0 has been loaded into ", ns.getHostname());
