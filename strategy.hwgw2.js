@@ -24,7 +24,23 @@ export default class hwgwww extends Default {
                 path: "bin.wk.futureloop.js",
                 ram: 1.8,
                 ratio: 0
+            },
+            {
+                path: "bin.hk.future.js", // for targets in prep mode
+                ram: 1.70,
+                ratio: 0
+            },
+            {
+                path: "bin.gr.future.js",
+                ram: 1.75,
+                ratio: 0
+            },
+            {
+                path: "bin.wk.future.js",
+                ram: 1.75,
+                ratio: 0
             }
+            
         ];
         this.stagger = 1;
     }
@@ -68,12 +84,12 @@ export default class hwgwww extends Default {
                     bundle.weakThreads1 -= 5;
                     if (bundle.weakThreads1 < 0) {
                         a_threads.w1 += 5 - Math.abs(bundle.weakThreads1);
-                        unpromised_ram.set(a.id, unpromised_ram.get(a.id) - (5 - Math.abs(bundle.weakThreads1) * 1.8));
+                        unpromised_ram.set(a.id, unpromised_ram.get(a.id) - (5 - Math.abs(bundle.weakThreads1) * bundle.weakFile.ram));
                         sumThreads -= 5 - Math.abs(bundle.weakThreads1);
                         bundle.weakThreads1 = 0;
                     } else {
                         a_threads.w1 += 5;
-                        unpromised_ram.set(a.id, unpromised_ram.get(a.id) - 9);
+                        unpromised_ram.set(a.id, unpromised_ram.get(a.id) - 9); // we use static ram here; nice round numbers. we'll lose .5% of our threads against unready targets but whatever.
                         sumThreads -= 5;
                     }
                 }
@@ -82,7 +98,7 @@ export default class hwgwww extends Default {
                     bundle.weakThreads2 -= 5;
                     if (bundle.weakThreads2 < 0) {
                         a_threads.w2 += 5 - Math.abs(bundle.weakThreads2);
-                        unpromised_ram.set(a.id, unpromised_ram.get(a.id) - (5 - Math.abs(bundle.weakThreads2) * 1.8));
+                        unpromised_ram.set(a.id, unpromised_ram.get(a.id) - (5 - Math.abs(bundle.weakThreads2) * bundle.weakFile.ram));
                         sumThreads -= 5 - Math.abs(bundle.weakThreads2);
                         bundle.weakThreads2 = 0;
                     } else {
@@ -94,7 +110,7 @@ export default class hwgwww extends Default {
 
                 if (a_threads.w1 > 0) {
                     suggested_bundles.push({
-                        file: "bin.wk.hwgw.js",
+                        file: bundle.weakFile.path,
                         attacker: a.id,
                         threads: a_threads.w1,
                         args: [target.id, bundle.nextlaunchdate + spacing + (batch_time * 100)]
@@ -103,7 +119,7 @@ export default class hwgwww extends Default {
 
                 if (a_threads.w2 > 0) {
                     suggested_bundles.push({
-                        file: "bin.wk.hwgw.js",
+                        file: bundle.weakFile.path,
                         attacker: a.id,
                         threads: a_threads.w2,
                         args: [target.id, bundle.nextlaunchdate + (spacing * 3) + (batch_time * 100)]
@@ -111,12 +127,12 @@ export default class hwgwww extends Default {
                 }
 
 
-                if (unpromised_ram.get(a.id) > bundle.growThreads * 1.8) {
+                if (unpromised_ram.get(a.id) > bundle.growThreads * bundle.growFile.ram) {
                     a_threads.g = bundle.growThreads;
                     sumThreads -= bundle.growThreads;
-                    unpromised_ram.set(a.id, unpromised_ram.get(a.id) - (bundle.growThreads * 1.8));
+                    unpromised_ram.set(a.id, unpromised_ram.get(a.id) - (bundle.growThreads * bundle.growFile.ram));
                     suggested_bundles.push({
-                        file: "bin.gr.hwgw.js",
+                        file: bundle.growFile.path,
                         attacker: a.id,
                         threads: a_threads.g,
                         args: [target.id, bundle.nextlaunchdate + (spacing * 2) + (batch_time * 100)]
@@ -124,12 +140,12 @@ export default class hwgwww extends Default {
                     bundle.growThreads = 0;
                 }
 
-                if (unpromised_ram.get(a.id) > bundle.hackThreads * 1.75) {
+                if (unpromised_ram.get(a.id) > bundle.hackThreads * bundle.hackFile.ram) {
                     a_threads.h = bundle.hackThreads;
                     sumThreads -= bundle.hackThreads;
-                    unpromised_ram.set(a.id, unpromised_ram.get(a.id) - (bundle.hackThreads * 1.75));
+                    unpromised_ram.set(a.id, unpromised_ram.get(a.id) - (bundle.hackThreads * bundle.hackFile.ram));
                     suggested_bundles.push({
-                        file: "bin.hk.hwgw.js",
+                        file: bundle.hackFile.path,
                         attacker: a.id,
                         threads: a_threads.h,
                         args: [target.id, bundle.nextlaunchdate]
@@ -144,6 +160,7 @@ export default class hwgwww extends Default {
                 (suggested_bundles.every(b => typeof b.attacker === "string")) &&
                 (suggested_bundles.every(b => typeof b.args[0] === "string")) &&
                 (suggested_bundles.every(b => b.args.length === 2));
+                // workloads are launching with some targets getting just the WGW workload
 
 
 
@@ -177,7 +194,21 @@ export default class hwgwww extends Default {
 }
 
 function calculate_hwgw_batch(target, player) {
+    let hackFile = {
+        path: "bin.hk.futureloop.js",
+        ram: 1.75,
+    };
 
+    let growFile = {
+        path: "bin.gr.futureloop.js",
+        ram: 1.8,
+    };
+
+    let weakFile = {
+        path: "bin.wk.futureloop.js",
+        ram: 1.8,
+    };
+    
     var percentage_hacked = 0.40;
     var hackThreads;
     var growThreads;
@@ -203,6 +234,15 @@ function calculate_hwgw_batch(target, player) {
         growThreads = numCycleForGrowthByHackAmt(target, target.money.max/target.money.available, target.money.max, player);
         weakThreads1 = (0.002 + target.security.level - target.security.min) / 0.05;
         weakThreads2 = growThreads * 0.004;
+        growFile = {
+            path: "bin.gr.future.js",
+            ram: 1.75,
+        };
+        weakFile = {
+            path: "bin.wk.future.js",
+            ram: 1.75,
+        };
+
     }
 
     let nextlaunchdate = new Date().valueOf() + Math.max(2000, weakenTime * 1.1);
@@ -220,6 +260,9 @@ function calculate_hwgw_batch(target, player) {
         growThreads,
         weakThreads1,
         weakThreads2,
+        hackFile,
+        growFile,
+        weakFile,
         nextlaunchdate,
         target
     };

@@ -205,7 +205,6 @@ export default class Default {
             // ns.tprint(e);
         for (let attack of e) {
             let attack_array = JSON.parse(attack);
-            ns.tprint(attack_array);
             pids.push(globalThis.ns.exec(attack_array.file, attack_array.attacker, attack_array.threads, ...attack_array.args));
         }
         return pids;
