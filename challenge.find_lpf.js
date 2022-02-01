@@ -1,11 +1,11 @@
 
 // add your code here.
-export const solve = (params) => {
+const solve = (params) => {
     let solution = null;
     return solution;
 };
 
-export async function attempt(params) {
+function tests(params) {
     let test = solve(5);
     if (test !== 5) { throw "Test 1 failed to pass"; }
     
@@ -25,3 +25,6 @@ export async function attempt(params) {
 // note, challenges are much easier to solve in an IDE.
 // working in an IDE, you'll want to remove the exports.
 // without an IDE, you can add a main(ns) statement to test your solutions
+export function answer(params) {
+    return tests(params);
+}

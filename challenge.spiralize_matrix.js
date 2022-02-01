@@ -11,7 +11,7 @@ function arrayEquals(a, b) {
       a.every((val, index) => val === b[index]);
   }
 
-function attempt(params) {
+function tests(params) {
     let test = solve([[1,2,3],[4,5,6],[7,8,9]]);
     let solution = [1, 2, 3, 6, 9, 8, 7, 4, 5];
     if (!arrayEquals(test,solution)) { throw "Test 1 failed to pass"; }
@@ -43,3 +43,6 @@ function attempt(params) {
 // note, challenges are much easier to solve in an IDE.
 // working in an IDE, you'll want to remove the exports.
 // without an IDE, you can add a main(ns) statement to test your solutions
+export function answer(params) {
+    return tests(params);
+}
