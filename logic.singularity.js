@@ -21,37 +21,30 @@ import { loop_time } from "./var.constants";
 
 export const alpha = async (ns, player, servers) => {
 	// let start_time = performance.now();
-	//solve coding contracts
-	autoSolve(ns, servers.map(s => s.id)); // note, this + the import is 20gb of ram alone.
 
-	//join factions without any restrictions
-	await factions.joinFactions(ns, player);
-
-	// set best activity
-	await factions.selectFocusActivity(ns, player);
-
-	// buy an aug, if appropriate
 	// player = factions.buyBestAug(ns, player);
 
 	/*****************
 	Get software
 	*****************/
-	try {
-		ns.purchaseTor();
-	} catch (e) {}
-
-	let software_list = [
-		"BruteSSH.exe",
-		"FTPCrack.exe",
-		"relaySMTP.exe",
-		"HTTPWorm.exe",
-		"SQLInject.exe"
-	];
-
-	for (let software of software_list) {
+	if (player.ports < 5) {
 		try {
-			ns.purchaseProgram(software);
+			ns.purchaseTor();
 		} catch (e) {}
+	
+		let software_list = [
+			"BruteSSH.exe",
+			"FTPCrack.exe",
+			"relaySMTP.exe",
+			"HTTPWorm.exe",
+			"SQLInject.exe"
+		];
+	
+		for (let software of software_list) {
+			try {
+				ns.purchaseProgram(software);
+			} catch (e) {}
+		}
 	}
 
 
@@ -100,10 +93,10 @@ export const omega = async (ns, player, servers) => {
     return { player, servers };  
 };
 
-export const gsModifiers = async (ns, player, servers) => {
+export const hackModifiers = async (ns, player, servers, weights) => {
     return new Map();
 };
 
-export const msModifiers = async (ns, player, servers) => {
+export const moneyModifiers = async (ns, player, servers, weights) => {
     return new Map();
 };
