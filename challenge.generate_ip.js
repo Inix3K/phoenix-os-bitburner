@@ -5,7 +5,7 @@ export const solve = (params) => {
     return solution;
 };
 
-export async function attempt(params) {
+export function attempt(params) {
     let test = solve("25525511135");
 
     test.forEach(function (t) {
