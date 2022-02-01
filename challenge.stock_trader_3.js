@@ -5,7 +5,7 @@ export const solve = (params) => {
     return solution;
 };
 
-export async function attempt(params) {
+export function attempt(params) {
     let test = solve([3,3,5,0,0,3,1,4]);
     if (test !== 6) { throw "Test 1 failed to pass"; }
     
