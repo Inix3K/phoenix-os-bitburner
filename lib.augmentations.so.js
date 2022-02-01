@@ -135,7 +135,6 @@ export const owned_aug_count = async () => await list_augs.filter(aug => aug.own
  *
  * @export
  * @param {string} stat
- * @return {AugmentationSnapshot[]} 
  */
 export async function augs_by_stat(stats=["hacking_mult"]) {
     let aug_list = await list_augs();

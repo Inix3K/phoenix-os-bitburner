@@ -66,7 +66,7 @@ export const joinFactions = async (ns, player, faction=null) => {
                 ns.joinFaction(faction_name);
             } catch(e) {}
         } else {
-            let desired = augs_by_stat(getFocusStat(ns, player));
+            let desired = await augs_by_stat(getFocusStat(ns, player));
             if (desired.some(aug => aug.factions_offering.includes(faction_name))) { 
                 // this faction offers an aug we desire
                 try {
@@ -88,7 +88,7 @@ export const selectFocusActivity = async (ns, player) => {
     if (player.work.isWorking) {
         let current = player.work.current.factionName;
         let faction = factionFactory(current);
-        faction.wanted_augs = augs_by_stat(getFocusStat(ns, player)).filter(aug => aug.factions_offering.includes(faction.name));
+        faction.wanted_augs = await augs_by_stat(getFocusStat(ns, player)).filter(aug => aug.factions_offering.includes(faction.name));
 
         if (faction.wanted_augs.length == 0) {
             ns.stopAction();
@@ -104,13 +104,13 @@ export const selectFocusActivity = async (ns, player) => {
 
        do { // cycle to a desired augment
             next_priority = pq.poll();
-        } while (!augs_by_stat(getFocusStat(ns, player)).includes(next_priority) && next_priority);
+        } while (!await augs_by_stat(getFocusStat(ns, player)).includes(next_priority) && next_priority);
 
         while (next_priority && !next_faction) {
             // ns.tprint(next_priority.factions_offering, " ", next_priority.name);
             for (let faction_name of player.faction.membership) {
                 let faction = factionFactory(faction_name); // heavy functions, but it's rare.
-                faction.wanted_augs = augs_by_stat(getFocusStat(ns ,player)).filter(aug => aug.factions_offering.includes(faction.name) && aug.rep > faction.rep);
+                faction.wanted_augs = await augs_by_stat(getFocusStat(ns ,player)).filter(aug => aug.factions_offering.includes(faction.name) && aug.rep > faction.rep);
                 if (faction.wanted_augs.includes(next_priority)) {
                     next_faction = faction;
                     ns.tprint("Starting work for ", next_faction.name, " in pursuit of ", next_priority);
