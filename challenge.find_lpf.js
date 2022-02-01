@@ -25,7 +25,6 @@ function tests(params) {
 // note, challenges are much easier to solve in an IDE.
 // working in an IDE, you'll want to remove the exports.
 // without an IDE, you can add a main(ns) statement to test your solutions
-export function attempt(params) {
+export function answer(params) {
     return tests(params);
 }
-
