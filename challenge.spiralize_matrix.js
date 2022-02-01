@@ -11,7 +11,7 @@ function arrayEquals(a, b) {
       a.every((val, index) => val === b[index]);
   }
 
-function attempt(params) {
+export function attempt(params) {
     let test = solve([[1,2,3],[4,5,6],[7,8,9]]);
     let solution = [1, 2, 3, 6, 9, 8, 7, 4, 5];
     if (!arrayEquals(test,solution)) { throw "Test 1 failed to pass"; }
