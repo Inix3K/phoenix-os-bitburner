@@ -1,8 +1,18 @@
 
 // add your code here.
 const solve = (params) => {
-    let solution = null;
+    let solution = 0;
+    let idx = 0;
+    for (let cur of params) {
+        for (let rest of params.slice(idx)) {
+            if ((rest - cur) > solution) {
+                solution = rest-cur;
+            }
+        }
+        idx++;
+    }
     return solution;
+
 };
 
 function tests(params) {

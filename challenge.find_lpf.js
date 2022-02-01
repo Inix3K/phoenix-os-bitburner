@@ -1,7 +1,16 @@
 
 // add your code here.
 const solve = (params) => {
-    let solution = null;
+    var x = 2;
+    while (x <= params) {
+        if (params % x == 0) {
+            params /= x;
+        } else {
+            x++;
+        }
+    }
+
+    let solution = x;
     return solution;
 };
 

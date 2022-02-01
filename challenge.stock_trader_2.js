@@ -1,8 +1,13 @@
 
 // add your code here.
 const solve = (params) => {
-    let solution = null;
-    return solution;
+    return params.reduce(function (accumulator, current, idx, arr) {
+        if (arr[idx+1] > current){
+            // console.log("Index ", idx, " profit ", (arr[idx+1]-current), " cumulatively ", accumulator);
+            return accumulator + (arr[idx+1]-current);
+        } else { return accumulator || 0; }
+    }, 0);
+
 };
 
 function tests(params) {

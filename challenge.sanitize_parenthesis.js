@@ -34,4 +34,3 @@ function tests(params) {
 export function answer(params) {
     return tests(params);
 }
-

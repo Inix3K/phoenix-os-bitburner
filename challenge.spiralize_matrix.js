@@ -1,6 +1,17 @@
 // add your code here.
 const solve = (params) => {
-    let solution = null;
+    var solution = [];
+    while (params.length > 0) {
+        solution.push(...params.shift());
+        try {
+            params = params[0].map((val, idx) => params.map(row => row[idx]).reverse()); // i only know how to rotate clockwise
+            params = params[0].map((val, idx) => params.map(row => row[idx]).reverse()); // this solution wants it counterclockwise
+            params = params[0].map((val, idx) => params.map(row => row[idx]).reverse()); // but three clockwise rotations is counter clockwise!
+        } catch(e) {
+            solution.push(...params);
+        }
+    }
+
     return solution;
 };
 
