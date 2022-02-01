@@ -1,3 +1,18 @@
 .vscode/
-challenge.array_jumping.js
 
+challenge.array_jumping.js
+challenge.find_lpf.js
+challenge.find_valid_math.js
+challenge.generate_ip.js
+challenge.merge_overlapping.js
+challenge.min_path_sum_triangle.js
+challenge.sanitize_parenthesis.js
+challenge.spiralize_matrix.js
+challenge.stock_trader_1.js
+challenge.stock_trader_2.js
+challenge.stock_trader_3.js
+challenge.stock_trader_4.js
+challenge.subarray_max_sum.js
+challenge.total_ways_sum.js
+challenge.unique_paths_grid_1.js
+challenge.unique_paths_grid_2.js
