@@ -14,7 +14,7 @@ import {
     minSumPath,
     attemptContract,
     autoSolve
-} from "./sing.codingcontracts";
+} from "./logic.leetcode";
 
 function scan(ns, parent, server, list) {
     const children = ns.scan(server);

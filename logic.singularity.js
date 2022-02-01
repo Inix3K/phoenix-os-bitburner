@@ -1,8 +1,5 @@
 import { get_distance_to_next_augment } from "./lib.augmentations.so";
 import { getAllServers } from "./lib.serverextras.so";
-import { autoSolve } from "./sing.codingcontracts";
-import * as factions from "./logic.factions";
-import { loop_time } from "./var.constants";
 
 /**
  * @typedef {import(".").NS} ns
