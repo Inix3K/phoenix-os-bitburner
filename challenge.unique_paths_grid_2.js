@@ -5,7 +5,7 @@ const solve = (params) => {
     return solution;
 };
 
-function attempt(params) {
+function tests(params) {
     test = solve([[0,0,0],[0,1,0],[0,0,0]]);
     if (test !== 2) { throw "Test 1 failed to pass"; }
     
