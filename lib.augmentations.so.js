@@ -98,7 +98,14 @@ export const snapshotAug = async (aug_obj) => {
  */
 export async function aug_info(aug_name) {
     const db = await handleDB();
-    return await db.get("augmentations", aug_name);
+    try {
+        const snap = await db.get("augmentations", aug_name);
+        return snap;
+    } catch (e) {
+        const snap = await snapshotAug(new Augmentation(aug_name));
+        await db.put("augmentations", snap);
+        return snap
+    } 
 }
 /**
  * Defines the standard object representing a list of augmentations.
