@@ -199,6 +199,13 @@ export async function main(ns) {
 
 			ns.print("-".padStart(12, "-"), ("NET WORTH: " + ns.nFormat(net_worth, '$ 0.00a')).padStart(16), "-".padEnd(12, "-"));
 		}
+
+		if (net_worth > 100000000) { // periodically sell our positions in case something else is waiting for cash to become available.
+			if (Math.random() < 0.02) {
+					sell_everything(ns);
+					await ns.sleep(60000);
+			}
+		}
 	}
 
 }
