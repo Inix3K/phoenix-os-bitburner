@@ -16,6 +16,7 @@ import hwgwww from "./strategy.hwgw2";
 import Default from "./strategy.base";
 import CashOut from "./strategy.maxcash";
 import Represent from "./strategy.rep";
+import Balanced from "./strategy.efficiency";
 
 // HOW TO USE THE LOGIC ENGINE : REFER TO LOGIC.MONEY.JS
 
@@ -34,23 +35,23 @@ const BaseModifiers = (ns, servers, player) => {
     let weights = new Map();
 
     // If all other strategies resolve to <= 0, default will activate
-    weights.set(DEFAULT, 1);
+    weights.set("DEFAULT", 1);
 
     // hwgw increases in priority for every server we own 1TB or higher. 
     // hwgw profit is defined as: server size for servers > 1TB
     // as it tends to be an efficient strategy, it needs no additional modifiers
 
-    weights.set(HWGW, servers.filter(s => s.isAttacker && s.power >= 9).map(s => s.power).reduce((a, b) => a + b, -9));
+    weights.set("HWGW", servers.filter(s => s.isAttacker && s.power >= 9).map(s => s.power).reduce((a, b) => a + b, -9));
 
     // the NewGame strategy generates significantly increased earnings over Default in new-game scenarios
     // however, its profit reverts to the profit of default after a port is acquired
-    weights.set(NEWGAME, 2 - player.ports);
+    weights.set("NEWGAME", 2 - player.ports);
 
     // the MaxCash strategy should be used dynamically to acquire specific upgrades that significantly increase rate of return
     // it should swell in value in the twenty or thirty minutes prior to augmentation reset; this is handled under sing modifiers
 
     // targeted upgrade: each new port, 4SAPI access @ 25 billion
-    weights.set(MAXCASH, 0);
+    weights.set("MAXCASH", 0);
 
     var cash = player.money;
     var easy_money = servers.filter(s => s.level <= 100 && s.isTarget).map(s => s.money.available).reduce((a, b) => a + b, 0);
@@ -58,26 +59,31 @@ const BaseModifiers = (ns, servers, player) => {
     switch (player.ports) {
         case 5:
             if (!player.market.api.fourSigma) {
-                weights.set(MAXCASH, (cash + easy_money) - 25000000000); // should resolve < 0 when cash+easy_money < 25b
+                weights.set("MAXCASH", (cash + easy_money) - 25000000000); // should resolve < 0 when cash+easy_money < 25b
             }
             break;
         case 4:
-            weights.set(MAXCASH, (cash + easy_money) - 250000000); // should resolve < 0 when cash+easy_money < 25b
+            weights.set("MAXCASH", (cash + easy_money) - 250000000); // should resolve < 0 when cash+easy_money < 25b
             break;
         case 3:
-            weights.set(MAXCASH, (cash + easy_money) - 30000000); // should resolve < 0 when cash+easy_money < 25b
+            weights.set("MAXCASH", (cash + easy_money) - 30000000); // should resolve < 0 when cash+easy_money < 25b
             break;
         case 2:
-            weights.set(MAXCASH, (cash + easy_money) - 5000000); // should resolve < 0 when cash+easy_money < 25b
+            weights.set("MAXCASH", (cash + easy_money) - 5000000); // should resolve < 0 when cash+easy_money < 25b
             break;
         case 1:
-            weights.set(MAXCASH, (cash + easy_money) - 1500000); // should resolve < 0 when cash+easy_money < 25b
+            weights.set("MAXCASH", (cash + easy_money) - 1500000); // should resolve < 0 when cash+easy_money < 25b
             break;
     }
 
     // Rep should be used dynamically to acquire specific reputation levels prior to augmentation.
-    // This is handled exclusively by singularity scripts
-    weights.set(REP, 0);
+    // This is handled exclusively by singularity scripts, except in the case where we have Daedalus faction membership
+
+    weights.set("REP", 0);
+    if (player.faction.membership.includes("Daedalus")) {
+        weights.set("REP", Number.POSITIVE_INFINITY);
+    }
+
 
 
     /*
@@ -124,7 +130,7 @@ export async function determineHackStrategy(ns, servers, player) {
     const weighted_weights = mergeModifiers(weights, modifiers);
     const pq = queueFactory(weighted_weights, true);
 
-    return pq.poll();
+    return eval(pq.poll()); // eval can be harmful but it's not my savefile
 }
 
 
@@ -183,7 +189,7 @@ class HackStrategy extends LogicState {
         return { player, servers };
     }
 
-    static sighup(ns, player, servers) {
+    static async sighup(ns, player, servers) {
         servers.forEach(s => s.pids.filter(pid => pid.filename.startsWith("bin.")).forEach(process => ns.kill(process.pid)));
         return { player, servers };
     }
@@ -326,7 +332,7 @@ export class MAXCASH extends HackStrategy {
 
 export class REP extends HackStrategy {
     static select_algorithm(ns, player, servers) {
-        const algo = new Represent(ns, player, servers);
+        const algo = new Balanced(ns, player, servers);
         return algo;
     }
 }

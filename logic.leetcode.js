@@ -73,13 +73,21 @@ const attemptContract = (type, data) => {
     }
 };
 
-export const init = (ns, player, servers) => {
-    for (let server of servers) {
+export const init = async (ns, player, servers) => {
+    return { player, servers };
+};
+
+export const loop = async (ns, player, servers) => {
+        for (let server of servers) {
         if (ns.ls(server.id, ".cct").length > 0) {
             let contractName = ns.ls(server.id, ".cct")[0];
             let contractData = ns.codingcontract.getData(contractName, server.id);
             let contractType = ns.codingcontract.getContractType(contractName, server.id);
-            let solution = attemptContract(contractType, contractData);
+            let solution;
+            try {
+                solution = attemptContract(contractType, contractData);
+            } catch (e) {}
+            
 
             if (solution) {
                 ns.tprint(ns.codingcontract.attempt(solution, contractName, server.id, { returnReward: true }));

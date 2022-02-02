@@ -82,8 +82,8 @@ import * as sleeves from "./fake.sleeve";
  */
 const BaseModifiers = (ns, servers, player) => {
     let weights = new Map();
-    weights.set(SPENDTHRIFT, -1); // if all numbers are >= 0, this will be the strategy.
-    weights.set(STOCKMARKET, -1e30);
+    weights.set("SPENDTHRIFT", -1); // if all numbers are >= 0, this will be the strategy.
+    weights.set("STOCKMARKET", (player.market.api.fourSigma) ? -1.07 * player.money : 0);
 
     // mirrors the gsMaxCash strategy // they should activate together
     var cash = player.money;
@@ -91,20 +91,20 @@ const BaseModifiers = (ns, servers, player) => {
     switch (player.ports) {
         case 5:
             if (!player.market.api.fourSigma) {
-                weights.set(SPENDTHRIFT, 25000000000 - (cash + easy_money)); // should resolve > 0 when cash+easy_money < 25b
+                weights.set("SPENDTHRIFT", 25000000000 - (cash + easy_money)); // should resolve > 0 when cash+easy_money < 25b
             }
             break;
         case 4:
-            weights.set(SPENDTHRIFT, 250000000 - (cash + easy_money)); // should resolve > 0 when cash+easy_money < 25b
+            weights.set("SPENDTHRIFT", 250000000 - (cash + easy_money)); // should resolve > 0 when cash+easy_money < 25b
             break;
         case 3:
-            weights.set(SPENDTHRIFT, 30000000 - (cash + easy_money)); // should resolve > 0 when cash+easy_money < 25b
+            weights.set("SPENDTHRIFT", 30000000 - (cash + easy_money)); // should resolve > 0 when cash+easy_money < 25b
             break;
         case 2:
-            weights.set(SPENDTHRIFT, 5000000 - (cash + easy_money)); // should resolve > 0 when cash+easy_money < 25b
+            weights.set("SPENDTHRIFT", 5000000 - (cash + easy_money)); // should resolve > 0 when cash+easy_money < 25b
             break;
         case 1:
-            weights.set(SPENDTHRIFT, 1500000 - (cash + easy_money)); // should resolve > 0 when cash+easy_money < 25b
+            weights.set("SPENDTHRIFT", 1500000 - (cash + easy_money)); // should resolve > 0 when cash+easy_money < 25b
             break;
     }
 
@@ -129,6 +129,11 @@ const BaseModifiers = (ns, servers, player) => {
 
 
     // weights.set(BUYSERVERS, 0);
+
+
+    // weights.set("ENDGAME", 
+    //     (player.installed_augs >= 30 || player.faction.membership.includes("Daedalus")) ? 
+    //     Number.NEGATIVE_INFINITY : 0);
 
     /*
         import { STOCKMARKET } from ./logic.money.js
@@ -172,8 +177,7 @@ export async function determineResourceAllocation(ns, servers, player) {
 
     const weighted_weights = mergeModifiers(weights, modifiers);
     const pq = queueFactory(weighted_weights);
-
-    return pq.poll();
+    return eval(pq.poll());
 }
 
 
@@ -338,8 +342,8 @@ export class STOCKMARKET extends MoneyStrategy {
             return {player, servers};
         }
 
-        static sighup(ns, player, servers) {
-            ns.kill("sbin.market.js");
+        static async sighup(ns, player, servers) {
+            ns.kill("sbin.market.js", "home");
             return { player, servers };
         }
     
@@ -370,8 +374,8 @@ export class STOCKMARKET extends MoneyStrategy {
         return {player, servers};
     }
 
-    static sighup(ns, player, servers) {
-        ns.kill("sbin.hnet.js");
+    static async sighup(ns, player, servers) {
+        ns.kill("sbin.hnet.js", "home");
         return { player, servers };
     }
 }
@@ -384,9 +388,85 @@ export class STOCKMARKET extends MoneyStrategy {
  * @extends {MoneyStrategy}
  */
 export class SPENDTHRIFT extends MoneyStrategy {
+    static async init(ns, player, servers) { // Reprovision non-RAM resources
+        try {
+            ns.kill("sbin.hnet.js", "home");
+            await ns.sleep(1000);
+        } catch (e) {}
+        try {
+            ns.kill("sbin.market.js","home");
+            await ns.sleep(1000);
+            ns.exec("sbin.market.js", "home", 1, "SELLOFF");
+        } catch (e) {}
+        
+        return { player, servers };
+    }
+
     static buy_things(ns, player, servers) {
         ns.tprint("A blocker is preventing you from buying anything.");
-        return {player, servers};
+        return { player, servers };
     }
 }
 
+// export class ENDGAME extends MoneyStrategy {
+
+//     static async init(ns, player, servers) {
+//         ns.tprint("Entering endgame loop... full control handed to endgame strategy");
+
+//         servers.map(server => server.pids).flat()
+//             .filter(process => process.filename != "phoenix.js" && process.filename != "sbin.keepalive.js")
+//             .forEach(process => ns.kill(process.pid));
+        
+//         for (let s of servers) {
+//             await ns.scp(["bin.hk.loop.js", "bin.share.loop.js"],"home", s.id);
+//         }
+
+
+//             await ns.sleep(1000);
+//             let cash = ns.nFormat(Math.max(0,100000000000 - player.money),'0.0a');
+//             let level = ns.nFormat(Math.max(0,2500 - player.level),'0');
+//             ns.tprint("");
+//             ns.tprint("               (                           )                              ");
+//             ns.tprint("               ) )( (                           ( ) )( (                  ");
+//             ns.tprint("            ( ( ( )  ) )                     ( (   (  ) )(                ");
+//             ns.tprint("           ) )     ,,\\\\ TO GO: THE RED PILL   ///,,       ) (              ");
+//             ns.tprint("        (  ((    (\\\\//  LVL: ",level.padEnd(15)," \\\\////)      )");
+//             ns.tprint("         ) )    (-(__//    $ ",cash.padEnd(15),"   \\\\__)-)     (");
+//             ns.tprint("        (((   ((-(__||                         ||__)-))    ) )            ");
+//             ns.tprint("       ) )   ((-(-(_||           ```\\__        ||_)-)-))   ((             ");
+//             ns.tprint("       ((   ((-(-(/(/\\        ''; 9.- `      //\\)\\)-)-))    )            ");
+//             ns.tprint("        )   (-(-(/(/(/\\      '';;;;-\\~      //\\)\\)\\)-)-)   (   )         ");
+//             ns.tprint("       (  (   ((-(-(/(/(/\======,:;:;:;:,======/\\)\\)\\)-)-))   )           ");
+//             ns.tprint("         )  '(((-(/(/(/(//////:%%%%%%%:\\\\\\\\\\\\)\\)\\)\\)-)))`  ( (            ");
+//             ns.tprint("        ((   '((-(/(/(/('uuuu:WWWWWWWWW:uuuu`)\\)\\)\\)-))`    )             ");
+//             ns.tprint("          ))  '((-(/(/(/('|||:wwwwwwwww:|||')\\)\\)\\)-))`    ((             ");
+//             ns.tprint("       (   ((   '((((/(/('uuu:WWWWWWWWW:uuu`)\\)\\))))`     ))              ");
+//             ns.tprint("             ))   '':::UUUUUU:wwwwwwwww:UUUUUU:::``     ((   )            ");
+//             ns.tprint("               ((      '''''''\\uuuuuuuu/``````         ))                 ");
+//             ns.tprint("                ))            `JJJJJJJJJ`           ((                    ");
+//             ns.tprint("                  ((            LLLLLLLLLLL         ))                    ");
+//             ns.tprint("                    ))         ///|||||||\\\\\\       ((                     ");
+//             ns.tprint("                      ))      (/(/(/(^)\\)\\)\\)       ((                    ");
+//             ns.tprint("                       ((                           ))                    ");
+//             ns.tprint("                         ((                       ((                      ");
+//             ns.tprint("                           ( )( ))( ( ( ) )( ) (()                        ");
+
+//             await ns.sleep(15000);
+
+//             if (cash > 0) {
+//                 if (ns.ps("home").every(process => process.filename != "sbin.market.js")) {
+//                     ns.exec("sbin.market.js", "home");
+//                 } else { // swap back and forth to get updated money counts
+//                     ns.kill("sbin.market.js", "home");
+//                     ns.exec("sbin.market.js", "home", 1, "SELLOFF");
+//                 }
+//                 servers.filter(s => s.isAttacker && s.ram.free > 2.4).forEach(s => ns.exec("bin.universal.loop.js", s.id, s.threadCount(2.4,  true), "foodnstuff"));
+//             } else if (level > 0) {
+//                 servers.filter(s => s.isAttacker && s.ram.free > 1.7).forEach(s => ns.exec("bin.hk.loop.js", s.id, s.threadCount(1.7,  true), s.id));
+//             } else { // just rep game now
+//                 servers.filter(s => s.isAttacker && s.ram.free > 4).forEach(s => ns.exec("bin.share.loop.js", s.id, s.threadCount(4,  true)));
+//             }
+//             await ns.sleep(120000);
+//             return {player, servers};
+//     }
+// }

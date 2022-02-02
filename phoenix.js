@@ -6,7 +6,7 @@
  */
 
 import * as motd from "./etc.motd";
-import updateData, { firstLoad, snapshotServer, snapshotPlayer } from "./lib.loader.so";
+import updateData, { firstLoad } from "./lib.loader.so";
 
 /***************************************************************/
 /*                     RAM USAGE CONTROL                       */
@@ -74,6 +74,7 @@ import * as sleeves from "./fake.sleeve";
 import { determineResourceAllocation } from "./logic.money";
 import { determineHackStrategy } from "./logic.hack";
 import { loop_time } from "./var.constants";
+// import { handleDB } from "./lib.database.so";
 
 // import { determineResourceAllocation } from "./home.logicMoney";
 // import { determineGameStage } from "./home.logicHacking";
@@ -97,7 +98,18 @@ export async function main(ns){
     servers.map(server => server.pids).flat()
         .filter(process => process.filename != "phoenix.js" && process.filename != "sbin.keepalive.js")
         .forEach(process => ns.kill(process.pid));
-    
+
+
+    let factions;
+    let aug_map;
+    ({player, servers, factions, aug_map}     = await facts.init               (ns, player, servers));
+    // ({player, servers}     = await corps.init               (ns, player, servers));
+    // ({player, servers}     = await crimes.init              (ns, player, servers));
+    ({player, servers}     = await leetcode.init            (ns, player, servers));
+    // ({player, servers}     = await sleeves.init             (ns, player, servers));
+    ({player, servers}     = await sing.init                (ns, player, servers));
+
+        
     while (true) {
         await heartbeat(ns, player, servers);
         
@@ -106,50 +118,56 @@ export async function main(ns){
         // dev note: snapshotting is new functionality. if it throws an error, you can safely comment it out.
         // when this data becomes used for something, i'll remove this note. please file a bug report if you have
         // any issues, as theoretically, database access is browser-dependent.
-        let ssp = await snapshotPlayer(player);
-        await ns.write("player.text", JSON.stringify(ssp), "a");
+        // let ssp = await snapshotPlayer(player);
+        // const db = await handleDB();
+        // await db.put("player", ssp);
 
-        for await (const server of servers) {
-            let sss = await snapshotServer(server);
-            await ns.write("servers.txt", JSON.stringify(sss), "a");
-        }
+        // for await (const server of servers) {
+        //     let sss = await snapshotServer(server);
+        //     const db = await handleDB();
+        //     await db.put("servers", sss);
+        // }
 
         // await ns.wget(`http://localhost:8000/report/bn4/player/${new Date().valueOf()}/${JSON.stringify(snapshotPlayer)}/`, "nothing.txt");
         // await ns.wget(`http://localhost:8000/report/bn4/server/${new Date().valueOf()}/${JSON.stringify(snapshotServer)}/`, "nothing.txt");
         
-        // var gameStage = await determineGameStage(ns, servers, player);
-        // var moneyStage = await determineResourceAllocation(ns, servers, player);
         var hackStrategy = await determineHackStrategy(ns, servers, player);
         var moneyStrategy = await determineResourceAllocation(ns, servers, player);
-        
-        if (player.hackStrategy || player.moneyStrategy) {
-            if (hackStrategy != player.hackStrategy) {
-                ({ player, servers} = player.hackStrategy.sighup(ns, player, servers));
-                player.hackStrategy = hackStrategy;
-            }
-            
-            if (moneyStrategy != player.moneyStrategy) {
-                ({ player, servers } = player.moneyStrategy.sighup(ns, player, servers));
-                player.moneyStrategy = moneyStrategy;
-            }
-        }
 
-        ({player, servers}     = await facts.init               (ns, player, servers));
-        ({player, servers}     = await corps.init               (ns, player, servers));
-        ({player, servers}     = await crimes.init              (ns, player, servers));
-        ({player, servers}           = leetcode.init            (ns, player, servers));
-        ({player, servers}     = await sleeves.init             (ns, player, servers));
-        ({player, servers}     = await sing.alpha               (ns, player, servers));
+        ({player, servers, factions, aug_map}     = await facts.loop               (ns, player, servers, factions, aug_map));
+        // ({player, servers}     = await corps.loop               (ns, player, servers));
+        // ({player, servers}     = await crimes.loop              (ns, player, servers));
+        // ({player, servers}           = leetcode.loop            (ns, player, servers));
+        // ({player, servers}     = await sleeves.loop             (ns, player, servers));
+        ({player, servers}     = await sing.loop               (ns, player, servers));
+
         ({player, servers}     = await moneyStrategy.init       (ns, player, servers));
         ({player, servers}           = moneyStrategy.buy_things (ns, player, servers));
-        ({player, servers}     = await moneyStrategy.cleanup    (ns, player, servers));
         ({player, servers}     = await hackStrategy.init        (ns, player, servers));
         ({player, servers}           = hackStrategy.do_hack     (ns, player, servers));
+
+        await ns.sleep(loop_time);
+        ({player, servers}     = await moneyStrategy.cleanup    (ns, player, servers));
         ({player, servers}     = await hackStrategy.cleanup     (ns, player, servers));
         // ({player, servers}     = await sing.omega            (ns, player, servers));
-         
+
+        if (hackStrategy != player.hackStrategy) {
+            try {
+                ({ player, servers} = await player.hackStrategy.sighup(ns, player, servers));
+            } catch (e) {}
+        }
+        player.hackStrategy = hackStrategy;
+        
+        if (moneyStrategy != player.moneyStrategy) {
+            try {
+                ({ player, servers } = await player.moneyStrategy.sighup(ns, player, servers));
+            } catch (e) {}
+        }
+
+        console.log(moneyStrategy);
+        player.moneyStrategy = moneyStrategy;
+        
         await motd.banner_short(ns, player, servers, hackStrategy, moneyStrategy, start_time);
-        await ns.sleep(loop_time);
     }
 }
 

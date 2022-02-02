@@ -75,3 +75,7 @@ export const attemptContract = (type, data) => {
 export const init = (ns, player, servers) => {
     return { player, servers };
 };
+
+export const loop = async (ns, player, servers) => {
+    return { player, servers };
+};

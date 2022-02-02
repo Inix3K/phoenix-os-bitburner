@@ -9,3 +9,7 @@ export const hackModifiers = async (ns, player, servers, weights) => {
 export const moneyModifiers = async (ns, player, servers, weights) => {
     return new Map();
 };
+
+export const loop = async (ns, player, servers) => {
+    return { player, servers };
+};
