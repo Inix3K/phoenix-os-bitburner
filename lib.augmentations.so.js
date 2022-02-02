@@ -4,7 +4,7 @@
 import { PriorityQueue } from "./lib.structures.so";
 import { faction_blockers } from "./var.constants";
 import { loop_time } from "./var.constants";
-import { handleDB } from "./lib.database.so";
+// import { handleDB } from "./lib.database.so";
 
 class Augmentation {
 
@@ -58,6 +58,7 @@ class Augmentation {
 export class AugmentationSnapshot {
     constructor(Augmentation) {
         for (let prop of [
+            "name",
             "price",
             "prereq",
             "rep",
@@ -82,12 +83,12 @@ export const augFactory = async (aug_name) => {
  * @param {Augmentation} aug_obj 
  * @returns 
  */
-export const snapshotAug = async (aug_obj) => {
-    const db = await handleDB();
-    const snap = new AugmentationSnapshot(aug_obj);
-    await db.put("augmentations", snap);
-    return snap;
-};
+// export const snapshotAug = async (aug_obj) => {
+//     const db = await handleDB();
+//     const snap = new AugmentationSnapshot(aug_obj);
+//     await db.put("augmentations", snap);
+//     return snap;
+// };
 
 /**
  * Gets cached information about an aug from the database
@@ -96,17 +97,17 @@ export const snapshotAug = async (aug_obj) => {
  * @param {string} aug_name
  * @return {Promise<AugmentationSnapshot>} 
  */
-export async function aug_info(aug_name) {
-    const db = await handleDB();
-    try {
-        const snap = await db.get("augmentations", aug_name);
-        return snap;
-    } catch (e) {
-        const snap = await snapshotAug(new Augmentation(aug_name));
-        await db.put("augmentations", snap);
-        return snap
-    } 
-}
+// export async function aug_info(aug_name) {
+//     const db = await handleDB();
+//     try {
+//         const snap = await db.get("augmentations", aug_name);
+//         return snap;
+//     } catch (e) {
+//         const snap = await snapshotAug(new Augmentation(aug_name));
+//         await db.put("augmentations", snap);
+//         return snap;
+//     } 
+// }
 /**
  * Defines the standard object representing a list of augmentations.
  * Other functions should load information about augmentations from this library.
@@ -123,20 +124,23 @@ export async function list_augs() {
             try { 
                 aug_snapshot = await aug_info(aug_name);
                 if (!aug_snapshot) {
-                    aug_snapshot = await snapshotAug(aug_name);
+                    aug_snapshot = await augFactory(aug_name);
                 }
             } catch (e) {
-                aug_snapshot = await snapshotAug(aug_name);
+                aug_snapshot = await augFactory(aug_name);
             } finally {
                 aug_list.push(aug_snapshot);
             }
         }
-        return aug_list;
     }
+    return aug_list;
 }
 
-export const owned_aug_count = async () => await list_augs.filter(aug => aug.owned.length);
 
+export async function owned_aug_count() {
+    let list = await list_augs();
+    return list.filter(aug => aug.owned).length;
+}
 /**
  * gets a list of augmentations that match a stat
  *
@@ -146,7 +150,8 @@ export const owned_aug_count = async () => await list_augs.filter(aug => aug.own
 export async function augs_by_stat(stats=["hacking_mult"]) {
     let aug_list = await list_augs();
     for (let wanted_stat of stats) {
-        let wanted_augs = aug_list.filter(aug => aug.stats.keys().includes[wanted_stat]);
+        let wanted_augs = aug_list
+        wanted_augs = wanted_augs.filter(aug => aug.stats[wanted_stat] > 0);
         if (wanted_augs.length > 0) {
             return wanted_augs;
         }
@@ -162,9 +167,10 @@ export async function augs_by_stat(stats=["hacking_mult"]) {
  * @param {ns} ns 
  * @param {import("./phoenix-doc").PlayerObject} player 
  */
-export const prioritize_augmentations = (ns, player, stat_priorities=["hacking_mult", "faction_rep_mult"]) => {
+export const prioritize_augmentations = async (ns, player, stat_priorities=["hacking_mult", "faction_rep_mult"]) => {
     const pq = new PriorityQueue();
-    for (let aug of list_augs()) {
+    let aug_list = await list_augs();
+    for (let aug of aug_list) {
         if (aug.name == "NeuroFlux Governor") {
             continue;
         }
@@ -179,7 +185,7 @@ export const prioritize_augmentations = (ns, player, stat_priorities=["hacking_m
         // if we have five stat priorities, the first will be prioritized over the second at a rate of 5/4
         // however, since this is a modifier for a logarithmic function, it gives a moderate, but not exclusive, advantage.
         // in a list with only two stat priorities, the default, the advantage for first listed is about 50%
-        stat_priorities.forEach((stat, idx, arr) => modifier /= (aug.stats.keys().includes(stat) ? arr.length-idx : 0));
+        stat_priorities.forEach((stat, idx, arr) => modifier /= (aug.stats[stat] > 0 ? arr.length-idx : 0));
         let priority = (Math.log(aug.price) / Math.log(10)) + (Math.log(aug.rep) / Math.log(modifier));
 
         // this feels like a good formula, since we can do some math on the pq. for instance,
@@ -276,33 +282,33 @@ function history_mapreduce(player_history, stat) {
     // return rate_of_change;
 }
 
-function get_targeted_augment(ns, player) {
-    let next_priority;
-    let next_faction;
-    let selected_next;
-    const pq = prioritize_augmentations(ns, player);
+// function get_targeted_augment(ns, player) {
+//     let next_priority;
+//     let next_faction;
+//     let selected_next;
+//     const pq = await prioritize_augmentations(ns, player);
 
-    do {
-        next_priority = pq.poll();
-    } while (!desired_augmentations().includes(next_priority));
+//     do {
+//         next_priority = pq.poll();
+//     } while (!desired_augmentations().includes(next_priority));
 
-    while (next_priority && !next_faction) {
-        // ns.tprint(next_priority.factions_offering, " ", next_priority.name);
-        for (let faction_name of player.faction.membership) {
-            if (desired_augmentations().filter(aug => aug.factions_offering.includes(faction_name)).includes(next_priority)) {
-                next_faction = faction_name;
-                selected_next = next_priority;
-                break;
-            }
-        }
-        next_priority = pq.poll();
-    }
-    if (next_faction) {
-        return selected_next;
-    }
-    return null;
+//     while (next_priority && !next_faction) {
+//         // ns.tprint(next_priority.factions_offering, " ", next_priority.name);
+//         for (let faction_name of player.faction.membership) {
+//             if (desired_augmentations().filter(aug => aug.factions_offering.includes(faction_name)).includes(next_priority)) {
+//                 next_faction = faction_name;
+//                 selected_next = next_priority;
+//                 break;
+//             }
+//         }
+//         next_priority = pq.poll();
+//     }
+//     if (next_faction) {
+//         return selected_next;
+//     }
+//     return null;
 
-}
+// }
 /**
  * Calculates delta-T from historical values to get an exponential factor
  *
